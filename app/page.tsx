@@ -9,11 +9,15 @@ const plex = IBM_Plex_Mono({
   variable: "--font-mono",
 });
 
-// Types
+// ---------- Types ----------
 type Weather = { temp: number; desc: string; city: string } | null;
-type ThemeKey = keyof typeof THEMES;
 
-// Themes: gradients + solids
+type ThemeSpec =
+  | { kind: "auto"; cls: string }
+  | { kind: "gradient"; cls: string }
+  | { kind: "solid"; cls: string };
+
+// ---------- Themes: gradients + solids ----------
 const THEMES = {
   auto: { kind: "auto", cls: "" },
   aurora: {
@@ -42,8 +46,11 @@ const THEMES = {
   cobalt: { kind: "solid", cls: "bg-blue-950" },
   forest: { kind: "solid", cls: "bg-emerald-950" },
   plum: { kind: "solid", cls: "bg-purple-950" },
-} as const;
+} as const satisfies Record<string, ThemeSpec>;
 
+type ThemeKey = keyof typeof THEMES;
+
+// ---------- Helpers ----------
 function autoGradientByHour(h: number) {
   if (h >= 6 && h < 11) return THEMES.citrus.cls;
   if (h >= 11 && h < 17) return THEMES.ocean.cls;
@@ -270,7 +277,7 @@ export default function Page() {
       <header className="absolute left-0 right-0 top-6 z-30 grid grid-cols-3 items-center px-6">
         {/* Weather (left) */}
         {!focusMode ? (
-          <div className="justify-self-start -rotate-90 translate-y-[150%] -translate-x-[30%] sm:rotate-0 sm:translate-x-0 sm:translate-y-0 flex items-center gap-3 rounded-full bg-white/12 px-4 py-2 text-sm backdrop-blur ring-1 ring-white/15 shadow">
+          <div className="justify-self-start -rotate-90 translate-y-[100%] -translate-x-[30%] sm:rotate-0 sm:translate-x-0 sm:translate-y-0 flex items-center gap-3 rounded-full bg-white/12 px-4 py-2 text-sm backdrop-blur ring-1 ring-white/15 shadow">
             <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
               <path
                 d="M6 14a4 4 0 1 1 2.7-6.9A5 5 0 0 1 19 9a3 3 0 0 1-1 5H6z"
@@ -278,19 +285,21 @@ export default function Page() {
               />
             </svg>
             <div className="leading-tight ">
-              <p className="font-medium drop-shadow">
+              <p className="font-medium drop-shadow hidden sm:inline-block">
                 {weather?.city || "Yerləşmə"}
               </p>
               <p className="opacity-90 drop-shadow">
                 {typeof weather?.temp === "number"
                   ? `${weather.temp}°C`
                   : "--°C"}
-                {weather?.desc
-                  ? ` — ${
-                      weather.desc.charAt(0).toUpperCase() +
-                      weather.desc.slice(1)
-                    }`
-                  : ""}
+                <span className="font-medium drop-shadow hidden sm:inline-block">
+                  {weather?.desc
+                    ? ` — ${
+                        weather.desc.charAt(0).toUpperCase() +
+                        weather.desc.slice(1)
+                      }`
+                    : ""}
+                </span>
               </p>
             </div>
           </div>
@@ -329,7 +338,7 @@ export default function Page() {
 
             <div className="relative ">
               <button
-                onClick={() => setPaletteOpen((o) => !o)}
+                onClick={() => setPaletteOpen((o) => (o ? false : true))}
                 className="h-9 w-9 grid place-items-center rounded-full ring-1 ring-white/15 bg-white/12 backdrop-blur hover:bg-white/20 active:scale-[0.98] transition"
                 title="Tema"
               >
@@ -369,7 +378,7 @@ export default function Page() {
                         className={`relative h-16 w-full overflow-hidden rounded-xl ring-1 ring-white/20 ${
                           THEMES[k].kind === "solid"
                             ? THEMES[k].cls
-                            : `bg-gradient-to-br ${(THEMES[k] as any).cls}`
+                            : `bg-gradient-to-br ${THEMES[k].cls}`
                         } transition hover:scale-[1.02] active:scale-95`}
                         title={k}
                       >
